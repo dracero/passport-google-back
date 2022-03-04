@@ -64,9 +64,9 @@ passport.use(new GoogleStrategy({
 passport.serializeUser( async (user, done) => { 
     console.log(`\n--------> Serialize User:`)
     console.log(user)
-    if (!await docente.findOne({email: user.email})){
+    /*if (!await docente.findOne({email: user.email})){
       await docente.create({email:user.email});
-     }
+     }*/
      // The USER object is the "authenticated user" from the done() in authUser function.
      // serializeUser() will attach this user to "req.session.passport.user.{user}", so that it is tied to the session object for each session.  
 
@@ -83,6 +83,7 @@ passport.deserializeUser((user, done) => {
         done (null, user)
 }) 
 
+/*-------PARTI ACA*/
 
 //Start the NODE JS server
 app.listen(8080, () => console.log(`Server started on port 8080...`))
@@ -117,6 +118,7 @@ app.get("/login", (req, res) => {
 
 //Use the req.isAuthenticated() function to check if user is Authenticated
 checkAuthenticated = (req, res, next) => {
+  console.log("Authenticated",req.isAuthenticated())
   if (req.isAuthenticated()) { return next() }
   res.redirect("/login")
 }
