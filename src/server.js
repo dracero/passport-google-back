@@ -1,32 +1,24 @@
 const express = require('express')
 const app = express()
-require('dotenv').config()
 const path = require('path');
 var cors = require('cors')
+require('dotenv').config()
 const session = require('express-session')
 const passport = require('passport')
 var cookieParser = require('cookie-parser')
 app.use(cookieParser());
 const MongoStore = require('connect-mongo')
-require('dotenv').config()
 require('./config/database')
-const docente = require ('./models/users')
+//const docente = require ('./models/users')
 const  jwt = require("jsonwebtoken");
-
-
-const GoogleStrategy = require( 'passport-google-oauth2' ).Strategy;
 
 // set the view engine to ejs
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
 app.use(cors())
-//Middleware
-/*app.use(session({
-    secret: "secret",
-    resave: false ,
-    saveUninitialized: true ,
-}))*/
+
+const GoogleStrategy = require( 'passport-google-oauth2' ).Strategy;
 
 //Middleware sesssion persists in Mongo
 app.use(session({
@@ -64,11 +56,8 @@ passport.use(new GoogleStrategy({
 passport.serializeUser( async (user, done) => { 
     console.log(`\n--------> Serialize User:`)
     console.log(user)
-    /*if (!await docente.findOne({email: user.email})){
-      await docente.create({email:user.email});
-     }*/
-     // The USER object is the "authenticated user" from the done() in authUser function.
-     // serializeUser() will attach this user to "req.session.passport.user.{user}", so that it is tied to the session object for each session.  
+    // The USER object is the "authenticated user" from the done() in authUser function.
+    // serializeUser() will attach this user to "req.session.passport.user.{user}", so that it is tied to the session object for each session.  
 
     done(null, user)
 } )
@@ -83,58 +72,40 @@ passport.deserializeUser((user, done) => {
         done (null, user)
 }) 
 
-/*-------PARTI ACA*/
-
-//Start the NODE JS server
-app.listen(8080, () => console.log(`Server started on port 8080...`))
-
 app.get('/auth/google',
   passport.authenticate('google', { scope:
       [ 'email', 'profile' ] }
 ));
+
+
 
 app.get(
   '/auth/google/callback',
   passport.authenticate("google"),
   function (req, res) {
     if (req.user) { 
-      const token = jwt.sign({id: req.user.email}, 'top_secret', {
+       const token = jwt.sign({id: req.user.email}, 'top_secret', {
         expiresIn: 60 * 60 * 24 // equivalente a 24 horas
       })
       res.cookie('token', token)        
-      res.redirect('http://localhost:3000/Check')
+      //res.redirect('http://localhost:3000/Check')
+      res.send('funciona')
     } else {
-      res.redirect('http://localhost:3000/')
+      //res.redirect('http://localhost:3000/')
+      res.send('remal')
     } 
   }
 );
 
+app.use((req, res, next) => {
+    res.locals.authenticated = req.isAuthenticated();
+  next();    
+  });
 
-//Define the Login Route
-app.get("/login", (req, res) => {
-    res.render("pages/login.ejs")
-})
+const LogRoutes = require('./routes')
+app.use('/', LogRoutes)
+
+//Start the NODE JS server
+app.listen(8080, () => console.log(`Server started on port 8080...`))
 
 
-//Use the req.isAuthenticated() function to check if user is Authenticated
-checkAuthenticated = (req, res, next) => {
-  console.log("Authenticated",req.isAuthenticated())
-  if (req.isAuthenticated()) { return next() }
-  res.redirect("/login")
-}
-
-//Define the Protected Route, by using the "checkAuthenticated" function defined above as middleware
-app.get("/dashboard", checkAuthenticated, (req, res) => {
-  res.render("pages/dashboard.ejs", {name: req.user.displayName})
-})
-
-app.get("/check", checkAuthenticated, (req, res) => {
-  res.send("Funciona")
-})
-
-//Define the Logout
-app.post("/logout", (req,res) => {
-    req.logOut()
-    res.redirect("/login")
-    console.log(`-------> User Logged out`)
-})
