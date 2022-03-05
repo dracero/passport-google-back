@@ -96,7 +96,7 @@ app.get(
     } 
   }
 );
-
+//Here is the secrete of all, passing the value in res.locals variable
 app.use((req, res, next) => {
     res.locals.authenticated = req.isAuthenticated();
   next();    
